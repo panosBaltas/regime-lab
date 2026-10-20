@@ -1,0 +1,29 @@
+name: Reproduce research machinery
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  offline-checks:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - run: python -m pip install -r requirements-lock.txt
+      - run: python -m pip install --no-build-isolation --no-deps -e .
+      - run: python -m pip check
+      - run: python -m pytest -q
+      - run: python -m regime_lab project-demo --output outputs/ci_demo
+      - uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-demo-${{ matrix.os }}
+          path: outputs/ci_demo/

@@ -15,7 +15,7 @@ import pandas as pd
 
 from .carry import CarrySpec
 from .data import file_digest
-from .ensemble import allocation,load_sleeves,metrics,monthly_returns,simulate_allocation
+from .ensemble import allocation,load_sleeves,metrics,monthly_returns,simulate_allocation,selected_allocator
 from .inverse import load_inverse_market,simulate_inverse
 from .macro import MacroSpec,macro_panel,simulate_macro
 
@@ -78,8 +78,8 @@ def build_alpha_report(carry_root,macro_root,inverse_root,ensemble_root,output,
         trial_tables.append(table)
     pd.concat(trial_tables,ignore_index=True).to_csv(output/"trial_catalog.csv",index=False)
     selections={name:json.loads((p/"selection.json").read_text()) for name,p in roots.items()}
-    primary="static_risk" # Explicit research preference, not the 2023 validation winner.
-    names={"static_risk":"Fixed training-risk mix", "rolling_risk":"Validation-selected rolling risk",
+    primary=selected_allocator(selections["ensemble"])
+    names={"static_risk":"Fixed training-risk control", "rolling_risk":"Rolling risk allocation",
            "shrunk_mean_variance":"Shrunk mean–variance mix", "inverse":"Inverse funding carry", "macro":"Diversified ETFs"}
     returns,rf,_=load_sleeves(inverse_root,macro_root)
     frames={name:read_ledger(ensemble_root,name) for name in ("static_risk","rolling_risk","shrunk_mean_variance")}
@@ -93,7 +93,9 @@ def build_alpha_report(carry_root,macro_root,inverse_root,ensemble_root,output,
     excess=monthly.subtract(monthly_cash,axis=0)
     training=excess[(excess.index>="2021-01-01")&(excess.index<"2023-01-01")]
     weights=allocation(training,"static_risk")
-    # Stress the fixed capital weights; do not re-fit them on stressed outcomes.
+    _,base_decisions=simulate_allocation(returns,rf,primary)
+    frozen_schedule={d["fill_time"]:[d["inverse_weight"],d["macro_weight"]] for d in base_decisions}
+    # Replay the primary strategy's original decisions under stresses.
     stress=[]
     macro_spec=MacroSpec(**selections["macro"]["spec"])
     doubled_macro=simulate_macro(macro_panel(market_path,cash_path),replace(macro_spec,cost=2*macro_spec.cost))
@@ -106,7 +108,7 @@ def build_alpha_report(carry_root,macro_root,inverse_root,ensemble_root,output,
             # Include the previous calendar wealth point to obtain the first return.
             source=wealth.reindex(wealth.index.union(r.index).union(pd.DatetimeIndex([r.index[0]-pd.Timedelta(days=1)]))).ffill()
             r["macro"]=source.reindex(pd.DatetimeIndex([r.index[0]-pd.Timedelta(days=1)]).append(r.index)).pct_change().iloc[1:].to_numpy()
-        ledger,_=simulate_allocation(r,benchmark,"static_risk",static_weights=weights)
+        ledger,_=simulate_allocation(r,benchmark,primary,static_weights=weights,weight_schedule=frozen_schedule)
         stress.append({"scenario":label,**metrics(ledger[ledger.index>="2024-01-01"])})
     venue=evaluations[primary].copy();shock_date=pd.Timestamp("2025-01-02")
     loss=.1*float(venue.loc[shock_date,"inverse_weight"])
@@ -128,10 +130,11 @@ def build_alpha_report(carry_root,macro_root,inverse_root,ensemble_root,output,
     pd.DataFrame(summary).T.to_csv(output/"summary_metrics.csv")
     (output/"bootstrap_intervals.json").write_text(json.dumps(interval,indent=2),encoding="utf-8")
     (output/"replay_audit.json").write_text(json.dumps(replay,indent=2),encoding="utf-8")
-    model={"status":"research_candidate","preferred_after_research_comparison":primary,
+    model={"status":"exploratory_historical_reference","primary_allocator":primary,
            "validation_selected_allocator":selections["ensemble"]["selected"],
-           "weights_fitted_on":"2021–2022 completed monthly excess returns",
-           "fixed_inverse_weight":float(weights[0]),"fixed_macro_weight":float(weights[1]),
+           "weights_fitted_on":"2021–2022 completed monthly excess returns" if primary=="static_risk" else "previous 12 completed monthly excess returns",
+           "training_control_weights":{"inverse":float(weights[0]),"macro":float(weights[1])},
+           "primary_weight_policy":primary,"selection_override":False,
            "inverse_spec":selections["inverse"]["spec"],"macro_spec":selections["macro"]["spec"],
            "allocation_timing":"monthly capital allocation; subsequent returns only; two-day idle transfer allowance",
            "capital_transfer_costs":{"native_carry":.0029,"macro":.0015},
@@ -141,7 +144,7 @@ def build_alpha_report(carry_root,macro_root,inverse_root,ensemble_root,output,
     preferred=evaluations[primary]
     plt.rcParams.update({"font.size":10,"axes.spines.top":False,"axes.spines.right":False})
     figure,axis=plt.subplots(figsize=(9,3.5))
-    colors={"static_risk":"#2563eb","rolling_risk":"#0f9b8e","inverse":"#a855f7","macro":"#64748b"}
+    colors={"static_risk":"#2563eb","rolling_risk":"#0f9b8e","shrunk_mean_variance":"#ca8a04","inverse":"#a855f7","macro":"#64748b"}
     for name in colors:
         item=evaluations[name]
         axis.plot(item.index,np.cumprod(1+item.net_return),label=names[name],color=colors[name],lw=1.6)
@@ -156,7 +159,7 @@ def build_alpha_report(carry_root,macro_root,inverse_root,ensemble_root,output,
     axes[1].fill_between(preferred.index,100*(drawdown/peak-1),0,color="#2563eb",alpha=.22)
     axes[1].set_ylabel("Drawdown (%)");figure.autofmt_xdate()
     figure.savefig(output/"risk.png",dpi=160,bbox_inches="tight");plt.close(figure)
-    table=pd.DataFrame(summary).T.loc[["static_risk","rolling_risk","inverse","macro"],
+    table=pd.DataFrame(summary).T.loc[["static_risk","rolling_risk","shrunk_mean_variance","inverse","macro"],
                      ["monthly_excess_sharpe","daily_excess_sharpe","hac28_sharpe","cagr","drawdown"]]
     table.index=table.index.map(names);table.columns=["Monthly Sharpe","Daily Sharpe","HAC 28-day","Net CAGR","Drawdown"]
     for c in table.columns[:3]:table[c]=table[c].map(lambda x:f"{x:.2f}")
@@ -171,14 +174,14 @@ def build_alpha_report(carry_root,macro_root,inverse_root,ensemble_root,output,
 body{{font:15px/1.55 system-ui,sans-serif;color:#25324a;margin:20px auto;max-width:1040px;padding:0 16px}}h1{{font-size:28px}}h2{{font-size:19px;margin-top:26px}}p{{margin:9px 0}}.notice{{background:#f2efff;border-left:3px solid #8b5cf6;padding:14px 16px;border-radius:8px}}.score{{font-size:38px;font-weight:700}}.muted{{color:#64748b}}table{{width:100%;border-collapse:collapse;font-size:13px}}td,th{{border-bottom:1px solid #dbe2eb;padding:9px 7px;text-align:right;white-space:nowrap}}td:first-child,th:first-child{{text-align:left}}.table{{overflow:auto}}img{{width:100%;height:auto}}li{{margin:6px 0}}
 </style></head><body><h1>Funding carry + diversified ETFs</h1><p class="muted">Free-data research · 68 candidates across four families · evaluation valuation dates 2024–September 2026</p>
 <p><span class="score">{best['monthly_excess_sharpe']:.2f}</span> monthly net excess Sharpe · {best['daily_excess_sharpe']:.2f} from daily returns · {best['hac28_sharpe']:.2f} serial-dependence diagnostic</p>
-<p>{best['cagr']:.1%} annualized net growth; {best['drawdown']:.1%} maximum drawdown. Returns subtract matched BIL performance and include the stated trading and capital-transfer costs.</p>
-<p class="notice"><strong>Research candidate, not a guaranteed future Sharpe.</strong> The fixed training-risk mix is preferred after comparing the research results. The 2023 validation selector chose rolling risk instead, which later delivered {summary['rolling_risk']['daily_excess_sharpe']:.2f} daily / {summary['rolling_risk']['monthly_excess_sharpe']:.2f} monthly Sharpe. Evaluation context has been reused; this is not a pristine final holdout or a live trading record.</p>
-<h2>What the model trades</h2><p>The fixed risk model allocates {weights[0]:.1%} to coin-collateralized BTC/ETH funding carry and {weights[1]:.1%} to the diversified ETF sleeve. Those weights come from 2021–2022 monthly volatility, not from maximizing the evaluation-period Sharpe. Capital weights are restored monthly; moved cash spends two calendar days idle.</p>
+<p>{best['cagr']:.1%} annualized net growth; {best['drawdown']:.1%} maximum drawdown. Sharpe subtracts matched BIL performance from net returns; growth is the portfolio's net growth. Trading and capital-transfer costs are included.</p>
+<p class="notice"><strong>Exploratory historical reference.</strong> The headline follows the recorded 2023 validation selector: {escape(primary)}. The fixed training-risk mix is a separate control. No report-level preference overrides the selector. Evaluation context has been reused; this is not a pristine final holdout or a live trading record.</p>
+<h2>What the model trades</h2><p>The selected {escape(primary)} policy allocates between coin-collateralized BTC/ETH funding carry and diversified ETFs. Rolling rules use the previous 12 completed monthly observations. The fixed control uses 2021–2022 volatility, giving {weights[0]:.1%} carry and {weights[1]:.1%} ETF weights. Moved cash spends two calendar days idle in this original return-sleeve approximation.</p>
 <p>The carry sleeve buys BTC/ETH and uses those coins as collateral for matching native inverse perpetual shorts. It earns or pays actual funding and marks both the collateral and reciprocal-price futures payoff. Contract counts are whole numbers. It adjusts the hedge for accumulated coin funding every 30 days, rather than paying to repurchase the whole position daily. The ETF sleeve uses inverse-volatility asset-class risk allocation with an additional inverse-volatility tilt, a past-covariance risk ceiling, and 21-session rebalancing. It spans equities, bonds, real assets and the dollar.</p>
 <h2>Frequency and model-selection checks</h2><div class="table">{table.to_html(border=0)}</div>
 <p class="muted">Carry's {summary['inverse']['daily_excess_sharpe']:.2f} daily Sharpe falls to {summary['inverse']['monthly_excess_sharpe']:.2f} on monthly returns because funding is persistent. The combined candidate is evaluated primarily on monthly excess returns. Daily combined marks are asynchronous: US opening NAV is recognized at the following UTC midnight, while crypto is marked at midnight. The HAC diagnostic uses Bartlett-weighted covariances through 28 days; it is not a guarantee of an annual realized Sharpe.</p>
 <img src="equity.png" alt="Net evaluation wealth for the research candidate, validation-selected alternative, individual sleeves and BIL">
-<h2>Risk and uncertainty</h2><img src="risk.png" alt="Monthly excess returns and drawdown of the fixed training-risk mix">
+<h2>Risk and uncertainty</h2><img src="risk.png" alt="Monthly excess returns and drawdown of the validation-selected allocator">
 <p>The pointwise 95% three-month circular-block bootstrap interval for monthly Sharpe is [{ci['lower']:.2f}, {ci['upper']:.2f}], using {ci['months']} monthly observations and {ci['replications']:,} resamples. It is not corrected for selecting among these candidates or earlier project experiments. The true future Sharpe is not established as two.</p>
 <h2>Costs, delays and failure scenarios</h2><div class="table">{stress_table.to_html(index=False,border=0)}</div>
 <p class="muted">Doubled trading fees cover both the native carry and ETF sleeves; financing/capital-transfer rules remain fixed. Funding haircut removes 10% of positive receipts while retaining every negative payment. The venue-loss scenario is an invented 10% loss of capital allocated to the crypto venue on 2 January 2025, not an observed event or an estimate of default probability. The $10k row concerns whole-contract carry alone.</p>
@@ -198,7 +201,7 @@ body{{font:15px/1.55 system-ui,sans-serif;color:#25324a;margin:20px auto;max-wid
     source=Path(__file__).parent
     manifest={"sources":{p.name:file_digest(p) for pattern in ("carry*.py","inverse*.py","macro.py","ensemble.py","alpha_report.py") for p in source.glob(pattern)},
               "data":{str(p):file_digest(p) for folder in (Path(carry_data),Path(inverse_data)) for p in folder.glob("*.csv")},
-              "selections":selections,"preferred_research_candidate":primary,"test_context_reused":True,
+              "selections":selections,"primary_allocator":primary,"selection_override":False,"test_context_reused":True,
               "versions":{name:importlib.metadata.version(name) for name in ("numpy","pandas","scipy","scikit-learn","yfinance")}}
     (output/"manifest.json").write_text(json.dumps(manifest,indent=2),encoding="utf-8")
     inputs={"carry_root":str(Path(carry_root).resolve()),"macro_root":str(Path(macro_root).resolve()),

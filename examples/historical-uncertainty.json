@@ -1,0 +1,22 @@
+{
+  "rolling_risk": {
+    "block_months": 3,
+    "interval": [
+      0.9015951694782622,
+      3.3407637785997997
+    ],
+    "months": 32,
+    "replications": 5000,
+    "selection_adjusted": false
+  },
+  "static_risk": {
+    "block_months": 3,
+    "interval": [
+      1.238441351107799,
+      3.8106709681929183
+    ],
+    "months": 32,
+    "replications": 5000,
+    "selection_adjusted": false
+  }
+}

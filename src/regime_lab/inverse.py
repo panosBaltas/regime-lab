@@ -57,7 +57,7 @@ def change_short(wallet,face,entry_sum,delta,price,fee_rate):
     return wallet+realized-fee,new_face,new_entry,fee
 
 
-def simulate_inverse(market,spec,low=None,start="2020-11-02",capital=100_000.,funding_haircut=1.,contract_scale=1.):
+def simulate_inverse(market,spec,low=None,start="2020-11-02",capital=100_000.,funding_haircut=1.,contract_scale=1.,liquidate=True):
     if not 0<spec.allocation<1 or not 0<funding_haircut<=1:raise ValueError("Invalid inverse allocation/haircut")
     active,apr=carry_signals(market,spec)
     first=int(market.times.searchsorted(pd.Timestamp(start)))
@@ -139,20 +139,21 @@ def simulate_inverse(market,spec,low=None,start="2020-11-02",capital=100_000.,fu
     ledger=pd.DataFrame(rows).set_index("time")
     # Realize the inverse contract at a trade price, then sell collateral coins.
     ending_fee=0.
-    for i in range(2):
+    for i in range(2) if liquidate else ():
         wallet[i],face[i],entry[i],fee=change_short(wallet[i],face[i],entry[i],-face[i],market.future[last,i],spec.future_cost)
         ending_fee+=fee*market.spot[last,i]
         sale=wallet[i]*market.spot[last,i]
         ending_fee+=sale*spec.spot_cost
         cash[i]+=sale/market.usd[last]*(1-spec.spot_cost);wallet[i]=0
-    final=float(cash.sum()*market.usd[last]);beginning=nav/(1+ledger.net_return.iloc[-1])
+    final=float(cash.sum()*market.usd[last]) if liquidate else nav
+    beginning=nav/(1+ledger.net_return.iloc[-1])
     ledger.loc[ledger.index[-1],"net_return"]=final/beginning-1
     ledger.loc[ledger.index[-1],"usd_return"]=ledger.net_return.iloc[-1]
     ledger.loc[ledger.index[-1],"excess_return"]=ledger.net_return.iloc[-1]-ledger.cash_return.iloc[-1]
     ledger.loc[ledger.index[-1],"equity_quote"]=final/capital
     ledger.loc[ledger.index[-1],"fees"]+=ending_fee/beginning
     info={"minimum_margin_ratio":min_margin,"maintenance_breaches":breaches,"max_absolute_delta_fraction":max_abs_delta,
-          "capital":capital,"contract_face_usd":lot.tolist(),"decisions":decisions,"spec":asdict(spec)}
+          "capital":capital,"contract_face_usd":lot.tolist(),"decisions":decisions,"spec":asdict(spec),"terminal_liquidation":liquidate}
     return ledger,pd.DataFrame(trades),info
 
 

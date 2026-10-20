@@ -1,0 +1,20 @@
+{
+  "rolling_risk": {
+    "ending_nav": 133801.69855467623,
+    "events": 33771,
+    "fills_and_transfers": 1635,
+    "max_event_reconciliation_error_usd": 1.333546606474556e-10,
+    "minimum_margin": 0.9972697464511383,
+    "nav_from_attribution": 133801.69855467638,
+    "open_positions_at_end": true
+  },
+  "static_risk": {
+    "ending_nav": 141775.0802542325,
+    "events": 33771,
+    "fills_and_transfers": 1531,
+    "max_event_reconciliation_error_usd": 9.72022462519817e-11,
+    "minimum_margin": 0.9974441033518412,
+    "nav_from_attribution": 141775.08025423257,
+    "open_positions_at_end": true
+  }
+}

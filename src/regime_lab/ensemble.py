@@ -10,6 +10,14 @@ from .data import file_digest
 RULES=("static_risk","rolling_risk","shrunk_mean_variance")
 
 
+def selected_allocator(selection):
+    """The saved validation decision is the sole source of the report headline."""
+    name = selection["selected"]
+    if name not in RULES:
+        raise ValueError(f"Unknown saved allocator: {name}")
+    return name
+
+
 def allocation(history,rule):
     covariance=history.cov().to_numpy()
     sigma=np.sqrt(np.maximum(np.diag(covariance),1e-10))
@@ -64,7 +72,7 @@ def metrics(ledger):
             "drawdown":float(np.min(wealth/np.maximum.accumulate(np.r_[1.,wealth])[1:]-1))}
 
 
-def simulate_allocation(returns,rf,rule,transfer_cost=.001,static_weights=None):
+def simulate_allocation(returns,rf,rule,transfer_cost=.001,static_weights=None,weight_schedule=None):
     monthly=(1+returns).resample("ME").prod()-1
     monthly_cash=(1+rf).resample("ME").prod()-1
     excess=monthly.subtract(monthly_cash,axis=0)
@@ -86,6 +94,10 @@ def simulate_allocation(returns,rf,rule,transfer_cost=.001,static_weights=None):
             history=excess[excess.index<day.normalize().replace(day=1)].tail(12)
             if len(history)<12:raise ValueError("Insufficient past ensemble history")
             weights=static if rule=="static_risk" else allocation(history,rule)
+            if weight_schedule is not None:
+                weights=np.asarray(weight_schedule[str(day)],dtype=float)
+                if weights.shape!=(2,) or not np.isfinite(weights).all() or np.any(weights<0) or not np.isclose(weights.sum(),1):
+                    raise ValueError("Invalid frozen allocation weights")
             equity=float(values.sum()) if rows else 1.
             previous=values/equity;q=1.
             for _ in range(12):q=1-costs@np.abs(q*weights-previous)

@@ -103,7 +103,7 @@ def macro_targets(dates, names, closes, cash_closes, spec):
     return weights
 
 
-def simulate_macro(panel, spec):
+def simulate_macro(panel, spec, liquidate=True):
     dates,names,opens,closes,cash_open,cash_close = panel
     targets = macro_targets(dates,names,closes,cash_close,spec)
     start = max(252,int(dates.searchsorted("2010-01-01")))
@@ -124,7 +124,7 @@ def simulate_macro(panel, spec):
         days = (dates[t+2]-dates[t+1]).days/365.25
         carry = max(0,1-long)*rf -short*spec.borrow*days-max(0,long-1)*(rf+.01*days)
         before_exit = 1+float(target@changes)+carry
-        liquidation = float(np.abs(target*(1+changes)).sum()) if t == len(dates)-3 else 0
+        liquidation = float(np.abs(target*(1+changes)).sum()) if liquidate and t == len(dates)-3 else 0
         factor = q*(before_exit-fee*liquidation)
         equity *= factor
         rows.append({"time":dates[t+2],"net_return":factor-1,"cash_return":rf,"excess_return":factor-1-rf,

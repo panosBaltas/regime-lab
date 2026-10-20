@@ -1,0 +1,12 @@
+{
+  "model_id": "3dcfeddbcc25e09550ac68410d2bab4e2536e1789b9d56c9c0274ffa8b42f7ef",
+  "mode": "prospective_paper",
+  "records": 1,
+  "observations": 0,
+  "head_sha256": "0986a287634f428dd8c992ca46870dfeb1de8fae0bf3f20e94d2db8489952c2a",
+  "nav": 100000.0,
+  "replay_verified": true,
+  "sharpe": null,
+  "recorded_at": "2026-10-20T17:17:27.301274+00:00",
+  "capture_status": "Public Binance capture timed out; no live observations or fills recorded"
+}

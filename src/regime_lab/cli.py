@@ -105,8 +105,107 @@ def main(argv=None):
     alpha_report.add_argument("--inverse-results",type=Path,default=Path("outputs/inverse_v1"))
     alpha_report.add_argument("--ensemble-results",type=Path,default=Path("outputs/ensemble_v1"))
     alpha_report.add_argument("--output",type=Path,default=Path("outputs/alpha_v1"))
+    project_demo = subparsers.add_parser("project-demo", help="Offline direct-account demonstration; synthetic results only")
+    project_demo.add_argument("--output", type=Path, default=Path("outputs/project_demo"))
+    execution_run = subparsers.add_parser("execution-run", help="Replay underlying positions with explicit cash and settlement")
+    execution_run.add_argument("--output", type=Path, required=True)
+    execution_run.add_argument("--start", default="2023-01-01")
+    execution_run.add_argument("--end")
+    for command in (execution_run,):
+        command.add_argument("--inverse-results", type=Path, default=Path("outputs/inverse_v1"))
+        command.add_argument("--macro-results", type=Path, default=Path("outputs/macro_v1"))
+        command.add_argument("--ensemble-results", type=Path, default=Path("outputs/ensemble_v1"))
+        command.add_argument("--data", type=Path, default=Path("data/market.csv"))
+        command.add_argument("--cash-data", type=Path, default=Path("data/cash_bil.csv"))
+        command.add_argument("--inverse-data", type=Path, default=Path("data/inverse"))
+        command.add_argument("--carry-data", type=Path, default=Path("data/carry"))
+    freeze = subparsers.add_parser("paper-freeze", help="Create an exclusive, source-pinned prospective paper model")
+    freeze.add_argument("--output", type=Path, required=True)
+    freeze.add_argument("--inverse-results", type=Path, default=Path("outputs/inverse_v1"))
+    freeze.add_argument("--macro-results", type=Path, default=Path("outputs/macro_v1"))
+    freeze.add_argument("--ensemble-results", type=Path, default=Path("outputs/ensemble_v1"))
+    freeze.add_argument("--data", type=Path, default=Path("data/market.csv"))
+    freeze.add_argument("--cash-data", type=Path, default=Path("data/cash_bil.csv"))
+    paper_plan = subparsers.add_parser("paper-plan", help="Record the next scheduled model decision before its outcome")
+    paper_plan.add_argument("--model", type=Path, required=True)
+    paper_plan.add_argument("--inverse-results", type=Path, default=Path("outputs/inverse_v1"))
+    paper_plan.add_argument("--macro-results", type=Path, default=Path("outputs/macro_v1"))
+    paper_plan.add_argument("--data", type=Path, default=Path("data/market.csv"))
+    paper_plan.add_argument("--cash-data", type=Path, default=Path("data/cash_bil.csv"))
+    capture = subparsers.add_parser("paper-capture", help="Capture a single public-data snapshot; no orders or background worker")
+    capture.add_argument("--model", type=Path, required=True)
+    capture.add_argument("--output", type=Path, required=True)
+    capture.add_argument("--include-etfs", action="store_true")
+    capture.add_argument("--quote-usd", type=float, help="Explicit USDT/USD assumption; otherwise fetch the Yahoo proxy")
+    paper_step = subparsers.add_parser("paper-step", help="Mark and simulate eligible fills from a fresh captured snapshot")
+    paper_step.add_argument("--model", type=Path, required=True)
+    paper_step.add_argument("--snapshot", type=Path, required=True)
+    verify = subparsers.add_parser("paper-verify", help="Replay the paper journal and verify its model, chain and account")
+    verify.add_argument("--model", type=Path, required=True)
+    verify.add_argument("--expected-head", help="Previously saved trusted chain head; detects truncation")
+    refresh = subparsers.add_parser("paper-refresh", help="Rebuild the frozen reference specs on updated histories without selecting new models")
+    refresh.add_argument("--model", type=Path, required=True)
+    refresh.add_argument("--output", type=Path, required=True)
+    refresh.add_argument("--data", type=Path, default=Path("data/market.csv"))
+    refresh.add_argument("--cash-data", type=Path, default=Path("data/cash_bil.csv"))
+    refresh.add_argument("--inverse-data", type=Path, default=Path("data/inverse"))
+    refresh.add_argument("--carry-data", type=Path, default=Path("data/carry"))
+    stats = subparsers.add_parser("selection-audit", help="Allocator-only block-bootstrap and IID trial-count diagnostics")
+    stats.add_argument("--ensemble-results", type=Path, default=Path("outputs/ensemble_v1"))
+    stats.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
+        if args.command == "project-demo":
+            from .project import project_demo
+            summary, _ = project_demo(args.output)
+            print(summary.to_string())
+            print(f"Synthetic demonstration: {(args.output/'report.html').resolve()}")
+            return
+        if args.command == "execution-run":
+            from .project import run_execution_study
+            summary, _ = run_execution_study(args.output, args.inverse_results, args.macro_results,
+                args.ensemble_results, args.data, args.cash_data, args.inverse_data, args.carry_data, args.start, args.end)
+            print(summary.to_string())
+            print(f"Exploratory execution report: {(args.output/'report.html').resolve()}")
+            return
+        if args.command == "paper-freeze":
+            from .paper import freeze_model
+            result = freeze_model(args.output, args.inverse_results, args.macro_results,
+                                  args.ensemble_results, args.data, args.cash_data)
+            print(json.dumps({"model_id": result["model_id"], "created_at": result["created_at"], "mode": result["mode"]}, indent=2))
+            return
+        if args.command == "paper-plan":
+            from .paper import plan_paper
+            result = plan_paper(args.model, args.inverse_results, args.macro_results, args.data, args.cash_data)
+            print(json.dumps({"sha256": result["sha256"], "decision": result["payload"]["decision"]}, indent=2))
+            return
+        if args.command == "paper-capture":
+            from .capture import capture_public
+            try:
+                result = capture_public(args.model, args.output, args.include_etfs, args.quote_usd)
+            except Exception as exc:
+                raise ValueError(f"Public capture failed; no fills recorded: {exc}") from exc
+            print(json.dumps(result, indent=2))
+            return
+        if args.command == "paper-step":
+            from .paper import observe_paper
+            result = observe_paper(args.model, args.snapshot)
+            print(json.dumps({"sha256": result["sha256"], "valuation": result["payload"]["valuation"], "fills": result["payload"]["fills"]}, indent=2))
+            return
+        if args.command == "paper-verify":
+            from .paper import verify_paper
+            print(json.dumps(verify_paper(args.model, args.expected_head), indent=2))
+            return
+        if args.command == "paper-refresh":
+            from .paper import refresh_references
+            print(json.dumps(refresh_references(args.model, args.output, args.data, args.cash_data,
+                                                args.inverse_data, args.carry_data), indent=2))
+            return
+        if args.command == "selection-audit":
+            from .statistics import allocator_statistics
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            print(json.dumps(allocator_statistics(args.ensemble_results, args.output), indent=2))
+            return
         if args.command=="alpha-fetch":
             import pandas as pd
             import yfinance as yf

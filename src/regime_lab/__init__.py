@@ -1,4 +1,4 @@
-"""PCA/HMM research with explicit information and execution timing."""
+"""Auditable carry execution and chronological market-regime research."""
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "regime-lab"
-version = "0.1.0"
-description = "Chronological PCA/HMM and long/short stock statistical-arbitrage research"
+version = "0.2.0"
+description = "Auditable carry execution, forward paper validation, and chronological regime research"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

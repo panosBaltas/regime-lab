@@ -70,6 +70,23 @@ def test_inverse_future_data_cannot_change_old_contracts():
     pd.testing.assert_frame_equal(a[a.time<="2020-02-25"].reset_index(drop=True),b[b.time<="2020-02-25"].reset_index(drop=True))
 
 
+def test_continuous_reference_does_not_move_an_artificial_exit_fee_into_past_returns():
+    m=inverse_market(days=80)
+    s=inverse_spec(spot_cost=.0012,future_cost=.0007)
+    full,_,_=simulate_inverse(m,s,start="2020-02-02",liquidate=False)
+    shorter,_,info=simulate_inverse(m.before("2020-03-01"),s,start="2020-02-02",liquidate=False)
+    np.testing.assert_allclose(full.loc[shorter.index,"net_return"],shorter.net_return,atol=1e-14)
+    assert info["terminal_liquidation"] is False
+    dates=pd.bdate_range("2015-01-01",periods=400)
+    names=[name for group in GROUPS.values() for name in group]
+    prices=np.full((len(dates),len(names)),100.)
+    cash=np.full(len(dates),100.)
+    panel=(dates,names,prices,prices,cash,cash)
+    closed=simulate_macro(panel,MacroSpec("risk_parity"))
+    ongoing=simulate_macro(panel,MacroSpec("risk_parity"),liquidate=False)
+    assert np.prod(1+closed.net_return)==pytest.approx(np.prod(1+ongoing.net_return)*(1-.0005))
+
+
 def test_macro_flat_portfolio_only_pays_initial_and_final_trades():
     dates=pd.bdate_range("2015-01-01",periods=400)
     names=[name for group in GROUPS.values() for name in group]

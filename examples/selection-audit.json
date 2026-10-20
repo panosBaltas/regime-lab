@@ -1,0 +1,57 @@
+{
+  "methods": [
+    "static_risk",
+    "rolling_risk",
+    "shrunk_mean_variance"
+  ],
+  "selected": "rolling_risk",
+  "paired_block_catalog_diagnostic": {
+    "selected_monthly_sharpe": 1.809344776540106,
+    "catalog_size": 3,
+    "months": 33,
+    "replications": 3000,
+    "block_months": 3,
+    "max_statistic_p_value": 0.0003332222592469177,
+    "scope": "Supplied catalog only; exploratory diagnostic on inspected history, not independent evidence"
+  },
+  "iid_trial_count_sensitivity": [
+    {
+      "trials_assumed": 3,
+      "observations": 33,
+      "dispersion_estimated_from_candidates": 3,
+      "expected_max_per_period_sharpe": 0.07545423999971317,
+      "iid_probabilities": [
+        0.997753418115308,
+        0.9990700611240684,
+        0.9977271929005119
+      ],
+      "status": "IID sensitivity only; dispersion comes from this small catalog; serial dependence, trial correlation and unrecorded research are not corrected"
+    },
+    {
+      "trials_assumed": 68,
+      "observations": 33,
+      "dispersion_estimated_from_candidates": 3,
+      "expected_max_per_period_sharpe": 0.2116213536914539,
+      "iid_probabilities": [
+        0.9825881928292347,
+        0.9847497261420882,
+        0.959203956734795
+      ],
+      "status": "IID sensitivity only; dispersion comes from this small catalog; serial dependence, trial correlation and unrecorded research are not corrected"
+    },
+    {
+      "trials_assumed": 150,
+      "observations": 33,
+      "dispersion_estimated_from_candidates": 3,
+      "expected_max_per_period_sharpe": 0.23624505170985416,
+      "iid_probabilities": [
+        0.9760488626224605,
+        0.9768177193445216,
+        0.9386229636348539
+      ],
+      "status": "IID sensitivity only; dispersion comes from this small catalog; serial dependence, trial correlation and unrecorded research are not corrected"
+    }
+  ],
+  "project_wide_trial_count_known": false,
+  "evaluation_context_reused": true
+}

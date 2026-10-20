@@ -1,4 +1,5 @@
 .venv/
+.venv-*/
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -9,6 +10,8 @@ data/*.json
 data/stocks/
 data/carry/
 data/inverse/
+data/captures/
+paper/
 outputs/
 dist/
 build/

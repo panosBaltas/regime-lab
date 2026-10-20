@@ -162,3 +162,40 @@ The consolidated report, fitted model, complete trial catalog, source/data hashe
 
 All 51 tests passed after the new implementations, including the existing ETF/stock suites, funding and basis PnL, native reciprocal payoffs, collateral margin, whole contracts, future-data invariance, allocation timing, transfer costs and idle cash, and the effect of serial dependence on risk estimates. The completed CLI report, model/source/data hashes and embedded figures passed the final artifact audit.
 
+# Project maturity and reporting correction — 20 October 2026
+
+Preserved the prior exploratory project in baseline commit `3bb5de1`, then removed
+the report-level preference that promoted fixed risk after evaluation. The headline
+now follows the saved 2023 rolling-risk selector. The old 2.10 monthly figure remains
+historical research context; the corrected reference is 1.81 monthly / 1.99 daily.
+Stress replays retain the primary policy's original allocation decisions.
+
+Added a direct position/cash account engine with native coin wallets, whole inverse
+contracts, ETF units, USDT conversion, funding priority, delayed business-day
+transfers, bid/ask support, fees, collateral checks, corporate actions and dollar
+PnL attribution. It compares the recorded selector and a fixed-risk control under
+the same accounting, without selecting a new historical winner. The selected new
+variant scores 1.888 monthly / 1.953 daily / 1.834 HAC-28, 8.389% CAGR and -2.281%
+drawdown in the 2024 onward daily sample. There are 32 complete calendar months;
+partial boundary months are excluded. Its pointwise monthly interval is [0.902,
+3.341], not corrected for project-wide research selection. The control's 2.315
+monthly score is reported as a control. Every event's NAV reconciles within
+1.34e-10 USD. Total dollar attribution also reproduces final NAV.
+
+Added exclusive source/library-pinned model freezes, scheduled pre-outcome plans,
+public quote/funding capture, append-only local hash chains, trusted-head checks,
+and replay of paper account states. Reference-refresh rebuilds only frozen specs
+and avoids artificial terminal liquidation. A prospective model and its first plan
+were recorded on 20 October; public capture timed out at Binance. No live market
+observations, fills or forward Sharpe are claimed at the initial checkpoint.
+
+The separate Python 3.13 environment has system packages disabled. Package-server
+and DNS failures prevented the first online installation; cached original wheels
+supplied a clean offline installation instead. The complete 47-package version
+lock installs, `pip check` passes, and all 70 tests pass in that isolated environment.
+The offline CLI demonstration also exercises a labeled synthetic paper journal.
+Windows/Linux CI is configured but no remote CI run or repository publication is
+claimed. Curated portable reports, the research note, paper runbook, protocol and
+interview guide are included. New HMM controls, broker integration, verified
+dividend payment settlement and a substantial forward record remain future work.
+

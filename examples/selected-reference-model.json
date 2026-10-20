@@ -1,0 +1,39 @@
+{
+  "status": "exploratory_historical_reference",
+  "primary_allocator": "rolling_risk",
+  "validation_selected_allocator": "rolling_risk",
+  "weights_fitted_on": "previous 12 completed monthly excess returns",
+  "training_control_weights": {
+    "inverse": 0.5059474701140264,
+    "macro": 0.4940525298859736
+  },
+  "primary_weight_policy": "rolling_risk",
+  "selection_override": false,
+  "inverse_spec": {
+    "window": 30,
+    "rebalance": 30,
+    "gate": "passive",
+    "allocation": 0.98,
+    "spot_cost": 0.0012,
+    "future_cost": 0.0007,
+    "delay_hours": 1,
+    "maintenance": 0.1,
+    "guard": 0.3
+  },
+  "macro_spec": {
+    "family": "inverse_variance",
+    "lookback": 126,
+    "rebalance": 21,
+    "top": 3,
+    "cost": 0.0005,
+    "borrow": 0.02
+  },
+  "allocation_timing": "monthly capital allocation; subsequent returns only; two-day idle transfer allowance",
+  "capital_transfer_costs": {
+    "native_carry": 0.0029,
+    "macro": 0.0015
+  },
+  "data_end": "2026-09-30",
+  "evaluation": "2024–September 2026; reused research context",
+  "scope": "asynchronous return-sleeve allocation research; direct multi-venue implementation needs forward validation"
+}
