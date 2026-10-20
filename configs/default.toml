@@ -1,0 +1,13 @@
+target = "SPY"
+horizon = 5
+train_size = 1260
+calibration_size = 756
+test_size = 126
+n_components = 3
+n_states = 3
+hmm_restarts = 3
+hmm_iterations = 200
+ridge_alpha = 100.0
+cost_bps = 5.0
+seed = 42
+

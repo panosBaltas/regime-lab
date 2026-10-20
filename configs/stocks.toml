@@ -1,0 +1,24 @@
+factor_lookback = 252
+factor_refit = 21
+n_components = 5
+min_stocks = 60
+min_price = 5.0
+min_dollar_volume = 20000000.0
+training_window = 504
+minimum_training_dates = 252
+model_refit = 21
+target_horizon = 5
+ridge_alphas = [1.0, 10.0, 100.0]
+validation_block = 63
+minimum_inner_dates = 126
+baseline_strength = 0.1
+risk_aversion = 20.0
+gross_limit = 1.0
+position_limit = 0.02
+account_notional = 1000000.0
+adv_participation = 0.01
+cost_bps = 5.0
+borrow_rate = 0.02
+financing_spread = 0.01
+seed = 42
+
