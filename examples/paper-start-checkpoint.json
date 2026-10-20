@@ -1,12 +1,14 @@
 {
-  "model_id": "3dcfeddbcc25e09550ac68410d2bab4e2536e1789b9d56c9c0274ffa8b42f7ef",
+  "model_id": "ba6ef61ffecb2bb97b5aac4a1ae256d95e52f6844e391de882294c400a9f4d0b",
   "mode": "prospective_paper",
-  "records": 1,
-  "observations": 0,
-  "head_sha256": "0986a287634f428dd8c992ca46870dfeb1de8fae0bf3f20e94d2db8489952c2a",
+  "records": 2,
+  "observations": 1,
+  "head_sha256": "85542dd2380c7e3c42d98646901110b59aef1dffcea381ac67734c8993789dae",
   "nav": 100000.0,
   "replay_verified": true,
   "sharpe": null,
-  "recorded_at": "2026-10-20T17:17:27.301274+00:00",
-  "capture_status": "Public Binance capture timed out; no live observations or fills recorded"
+  "recorded_at": "2026-10-20T17:32:30.380829+00:00",
+  "active_model_path": "paper/v2",
+  "fills": 0,
+  "capture_status": "One real public-market observation recorded; no fills before the first plan eligibility time; no forward Sharpe estimate"
 }

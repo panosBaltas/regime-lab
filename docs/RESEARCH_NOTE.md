@@ -100,7 +100,10 @@ attribution are in `examples/historical-metrics.csv` and the accompanying report
 At every event, NAV must reconcile to bank cash, broker cash/receivables/ETF units,
 venue quote cash, marked native coin equity and transfer cash. Changes reconcile
 to collateral price PnL, inverse PnL, funding, ETFs, dividends where applicable,
-quote-currency changes, execution basis/spread and fees. Saved decisions, order
+quote-currency changes, execution basis/spread and fees. Execution effects are
+calculated directly from each fill versus its mark, rather than as a residual
+that can absorb unexpected cash. A test injects cash and requires rejection.
+Saved decisions, order
 blotters and daily holdings permit inspection; an independent reconstruction of
 the earlier native wallet also remains available.
 

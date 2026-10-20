@@ -199,3 +199,22 @@ claimed. Curated portable reports, the research note, paper runbook, protocol an
 interview guide are included. New HMM controls, broker integration, verified
 dividend payment settlement and a substantial forward record remain future work.
 
+## Final audit revision (0.2.1)
+
+Final review replaced residual execution attribution with an independent
+calculation from each spot, ETF and inverse trade's fill price versus its mark.
+Injected unexplained cash now fails reconciliation instead of entering a residual
+bucket. All 71 tests pass in the isolated environment, `pip check` passes and both
+direct/synthetic CLI studies reproduce their prior returns. Version 0.2.0 and the
+initial paper-v1 source are preserved in commit `d296200`; the revised active paper
+model is `paper/v2`. Model parameters and historical performance were not optimized
+in this correction. The remaining public-data capture limitation is connectivity,
+not a fabricated replacement series.
+
+The retry did capture public data. One snapshot was rejected as stale at recording;
+the next capture and observation were executed in one process and accepted. Active
+paper-v2 now has one actual market observation, no fills and no inferred Sharpe.
+The plan's initial one-hour eligibility delay is respected. The provider did not
+qualify all indicative ETF quotes as fresh/executable. A checkpoint of the verified
+active chain is retained with the curated artifacts.
+

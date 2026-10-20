@@ -259,4 +259,3 @@ The capital allocator is a return-sleeve research model with asynchronous valuat
 - [BIS: Crypto carry](https://www.bis.org/publ/work1087.htm)
 - [Binance: COIN-M collateral and contract multipliers](https://www.binance.com/en-IN/support/faq/detail/85eac2bba0b342819122dc9bd4745e9b)
 - [Andrew Lo: The Statistics of Sharpe Ratios](https://alo.mit.edu/research-page/the-statistics-of-sharpe-ratios/)
-

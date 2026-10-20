@@ -116,3 +116,12 @@ def test_monthly_sharpe_uses_complete_nav_boundaries_not_a_partial_final_month()
     assert result["complete_months"] == 2
     assert result["days"] == len(dates)-1
     assert result["monthly_excess_sharpe"] == pytest.approx(np.mean([.10, -.02])/np.std([.10, -.02], ddof=1)*np.sqrt(12))
+
+
+def test_reconciliation_cannot_hide_unexplained_cash_as_execution_pnl(monkeypatch):
+    engine = funded_inverse()
+    def create_unexplained_cash(*args):
+        engine.account.bank += 10.
+    monkeypatch.setattr(engine, "_allocate", create_unexplained_cash)
+    with pytest.raises(ValueError, match="Trade/cash reconciliation failed"):
+        engine.advance(observation("2024-01-01T01:00:00Z"))

@@ -14,7 +14,12 @@ selection. `selection-audit.json` contains exploratory allocator-only statistica
 diagnostics. These artifacts concern different studies; do not merge headlines or
 treat selection diagnostics as independent forward validation.
 
-`paper-start-checkpoint.json` records the first actual prospective plan's model
-and journal hashes. At that checkpoint there are zero market observations/fills.
-Public capture subsequently timed out; no live performance is inferred. The
-checkpoint is a local version-control anchor, not an independent timestamp proof.
+`paper-start-checkpoint.json` records the active prospective model/journal hashes.
+There is one real public-market observation and no fills: the initial plan is
+still waiting for its eligibility time. An initial capture timed out and another
+was rejected as stale before the successful capture/record cycle. No forward
+Sharpe is inferred. The checkpoint is a local version-control anchor, not an
+independent timestamp proof.
+
+`research-trials.csv` retains the broader candidate catalog and
+`stock-pilot-metrics.csv` retains the unsuccessful stock pilot's scores/stresses.

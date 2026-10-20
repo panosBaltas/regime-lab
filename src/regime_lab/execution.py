@@ -125,6 +125,7 @@ class ExecutionEngine:
         price = p.get("future_bid" if delta > 0 else "future_ask", p["future"])[i]
         a.wallets[i], a.faces[i], a.entries[i], coin_fee = change_short(
             a.wallets[i], a.faces[i], a.entries[i], delta, price, self.spec.future_cost)
+        self.execution_pnl += delta*(1/p["mark"][i]-1/price)*p["spot"][i]
         self._fee(coin_fee*p["spot"][i], "inverse", time)
         self.blotter[-1].update(asset=i, face_delta=float(delta), price=price)
 
@@ -134,6 +135,7 @@ class ExecutionEngine:
         fee = abs(coins)*price*self.spec.spot_cost
         a.wallets[i] += coins
         a.crypto_quote -= (coins*price+fee)/p["quote_usd"]
+        self.execution_pnl += coins*(p["spot"][i]-price)
         self._fee(fee, "spot", time)
         self.blotter[-1].update(asset=i, coin_delta=float(coins), price=price)
 
@@ -216,6 +218,7 @@ class ExecutionEngine:
             fee = abs(trade_value)*self.spec.etf_cost
             a.broker_cash -= trade_value+fee
             a.etfs[s] = max(0., (old[j]+float(delta[j]))/prices[s])
+            self.execution_pnl += float(delta[j])*(1-price/prices[s])
             if abs(delta[j]) > 1e-8:
                 self._fee(fee, "etf", time)
                 self.blotter[-1].update(asset=s, unit_delta=float(delta[j])/prices[s], price=price)
@@ -251,6 +254,7 @@ class ExecutionEngine:
                     fee = sale*self.spec.etf_cost
                     a.etfs[symbol] *= 1-fraction
                     a.broker_cash += sale-fee
+                    self.execution_pnl += fraction*quantity*(price-self.prices["etf"][symbol])
                     self._fee(fee, "etf_transfer_sale", time)
                     self.blotter[-1].update(asset=symbol, unit_delta=-fraction*quantity, price=price)
                 gross = min(gross, a.broker_cash)
@@ -333,6 +337,7 @@ class ExecutionEngine:
         if not np.isclose(marked-before, spot_pnl+inverse_pnl+etf_pnl+fx_pnl+funding_pnl+dividend_pnl, atol=1e-7):
             raise ValueError("Mark-to-market attribution failed")
         self.fees = 0.
+        self.execution_pnl = 0.
         arrived = [t for t in a.transfers if timestamp(t["due"]) <= time
                    and (t["destination"] != "crypto" or "quote_usd" in prices)]
         for transfer in arrived:
@@ -374,8 +379,11 @@ class ExecutionEngine:
         nav = self.nav()
         if nav <= 0:
             raise ValueError("Account equity exhausted")
-        execution_pnl = nav-marked+self.fees
+        # Independent trade-versus-mark calculation, never an unexplained residual.
+        execution_pnl = self.execution_pnl
         total_pnl = spot_pnl+inverse_pnl+etf_pnl+fx_pnl+funding_pnl+dividend_pnl+execution_pnl-self.fees
+        if not np.isclose(nav-before, total_pnl, atol=1e-7, rtol=1e-10):
+            raise ValueError(f"Trade/cash reconciliation failed at {time}: {nav-before-total_pnl:.9g} USD")
         row = {"time": time.isoformat(), "nav": nav, "net_return": nav/before-1,
                "pnl_spot": spot_pnl, "pnl_inverse": inverse_pnl, "pnl_etf": etf_pnl,
                "pnl_fx": fx_pnl, "pnl_funding": funding_pnl, "pnl_dividend": dividend_pnl, "pnl_execution": execution_pnl,
