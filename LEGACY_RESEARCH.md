@@ -1,5 +1,9 @@
 # Regime Lab
 
+This document preserves the earlier research and its original output paths. For
+a fresh checkout, use the current [README](README.md) and
+[reproduction guide](docs/REPRODUCIBILITY.md), which provide one coherent layout.
+
 A Python research project for **return prediction and market-regime interpretation** using PCA, a Gaussian HMM, and regularized regression. The first target is SPY's next-open five-session return. The asset, horizon, and window sizes are configurable.
 
 The main question is whether filtered regime probabilities and regime-dependent signal relationships improve return forecasts beyond a regression without regimes. A well-separated volatility regime does not automatically imply predictable expected returns.

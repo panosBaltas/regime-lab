@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use Regime Lab in research, a project, or a presentation, please cite it using this file."
+type: software
+title: "Regime Lab: Auditable carry execution and forward paper validation"
+authors:
+  - family-names: Baltas
+    given-names: Panagiotis
+version: 0.2.1
+date-released: 2026-10-21
+license: MIT
+abstract: >-
+  A research toolkit for native inverse-contract funding carry, ETF allocation,
+  explicit account simulation, chronological model evaluation, and replayable
+  forward paper records. Historical and synthetic results are distinguished.

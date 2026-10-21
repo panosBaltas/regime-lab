@@ -5,10 +5,11 @@ or background scheduler. Use Python 3.13 and the locked environment in the READM
 
 ## Freeze once
 
-From the repository root, after the existing free-data studies have been run:
+From the repository root, after the [market workflow](REPRODUCIBILITY.md) has been
+run into `outputs/market_v1`. Use the same environment and input cache:
 
 ```powershell
-python -m regime_lab paper-freeze --output paper/v1
+python -m regime_lab paper-freeze --output paper/v1 --inverse-results outputs/market_v1/study/inverse --macro-results outputs/market_v1/study/macro --ensemble-results outputs/market_v1/study/ensemble
 python -m regime_lab paper-refresh --model paper/v1 --output outputs/reference_v1
 python -m regime_lab paper-plan --model paper/v1 --inverse-results outputs/reference_v1/inverse --macro-results outputs/reference_v1/macro
 python -m regime_lab paper-verify --model paper/v1
@@ -43,6 +44,33 @@ The earlier finite-horizon study outputs remain unchanged. Supply the refreshed
 reference paths when planning; the default old paths remain a legacy-input option.
 
 ## Capture, then mark
+
+The recommended single-step operation captures and records immediately in one
+process, avoiding operator delay between the network snapshot and freshness check:
+
+```powershell
+python scripts/paper_tick.py --model paper/v1 --captures data/captures
+```
+
+Each tick verifies the source-pinned model and journal before querying providers,
+always includes ETF capture, and writes a uniquely named snapshot plus a separate
+`.checkpoint.json` after replaying the new record. Retain the checkpoint away from
+the journal. Supply its `head_sha256` on the next tick:
+
+```powershell
+python scripts/paper_tick.py --model paper/v1 --captures data/captures --expected-head YOUR_SAVED_HEAD
+```
+
+An unexpected prior head stops before network access. Overlapping tick processes
+are rejected by `paper/v1/operations/.writer.lock`; the core journal has a separate
+writer lock. Manual commands still use the core lock and coverage validation.
+The wrapper never retries automatically. If a receipt or final verification fails,
+a journal record may already have committed: verify and inspect it before retrying.
+Provider/capture failures do not append a new observation. Rejected snapshots are
+retained when capture succeeded. No process is scheduled or left running by this
+script; run it at your chosen cadence and retain evidence of missing intervals.
+
+The lower-level commands remain available for inspecting or supplying snapshots:
 
 ```powershell
 python -m regime_lab paper-capture --model paper/v1 --include-etfs --output data/captures/observation-001.json
@@ -97,7 +125,10 @@ irregular journal.
 
 An interrupted writer can leave `.writer.lock`. Inspect the incomplete record and
 establish that no other writer is running before manually recovering it. Concurrent
-writers fail instead of silently interleaving records.
+writers fail instead of silently interleaving records. An interrupted tick can
+likewise leave the outer operations lock. Establish that the original process has
+exited and verify the journal before removing only that stale lock. Do not erase
+records or rewrite their hashes to force verification to pass.
 
 ## Snapshot contract
 

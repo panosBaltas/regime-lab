@@ -218,3 +218,48 @@ The plan's initial one-hour eligibility delay is respected. The provider did not
 qualify all indicative ETF quotes as fresh/executable. A checkpoint of the verified
 active chain is retained with the curated artifacts.
 
+# Publication preparation — 21 October 2026
+
+Added the standard MIT license with copyright held by Panagiotis Baltas, matching
+package author/SPDX license metadata, a GitHub citation file, and contributor
+guidance. Retaining copyright/license notices is the binding MIT requirement;
+explicit citation in research and presentations is requested as a courtesy.
+Dependency and public-data terms remain separate.
+
+Replaced mixed legacy-path instructions with a single repository runner for free
+data download, exploratory family studies, direct account replay, and selection
+diagnostics. Commands and the runner hash are retained in an exclusive new run
+directory. Dry runs have no side effects. The original research and its output
+paths remain documented rather than erased.
+
+Added a static report gallery built only from an explicit list of curated files,
+the original account equity figure, and legal/citation files. The gallery labels
+the selected allocator, retained control, synthetic demo, and dated forward
+checkpoint separately. A manually triggered GitHub Pages workflow is prepared;
+no remote repository, hosted CI success, or public deployment is claimed.
+
+Added a user-run public capture-and-record operation. It includes ETF capture,
+serializes overlapping ticks, checks an optional trusted prior head, immediately
+records a fresh snapshot, independently replays the resulting account, and saves
+a separate checkpoint with its runner hash. It never retries automatically after
+an error because a record can commit before a later receipt write fails. No
+background schedule, live orders, or new real-market observation was created in
+this publication pass.
+
+All 79 tests pass in the isolated locked environment, including eight operational
+tests for successful replay, stale data, provider errors, overlap, checkpoint
+mismatch, post-commit receipt failure, dry-run behavior, and workflow failure.
+`pip check` passes. A clean staged-source archive with no market cache built a
+wheel, and its installed wheel ran the full offline demo and synthetic paper replay.
+The source distribution contains citation, scripts, documentation, curated reports,
+and the equity figure; wheel metadata contains the author and MIT license notice.
+The gallery also builds from the clean archive. Desktop/phone browser checks found
+no document overflow, missing images, or broken gallery links. A tracked-file
+credential-pattern scan found no matches.
+
+No strategy-package source, selection, parameter, historical return, or active
+paper record changed. The existing paper-v2 model still verifies against its
+original trusted head. Continued forward observation, verified dividend payment
+settlement, broker reconciliation, and predeclared new model comparisons remain
+research work, not publication blockers for an honestly labeled portfolio project.
+

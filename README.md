@@ -1,15 +1,25 @@
 # Regime Lab
 
-**Auditable funding carry, explicit account simulation and forward paper validation.**
+**Auditable funding carry, explicit account simulation, and forward paper validation.**
 
-The project asks how much native BTC/ETH funding carry survives trading costs,
-collateral and capital movement, and what diversified ETFs change. It preserves
-PCA/HMM forecasting and the failed stock-arbitrage pilot as research history.
-No future Sharpe of two is established.
+Research by **Panagiotis Baltas** · Python 3.13 reference environment · [MIT license](LICENSE)
 
-## Offline quick start
+How much native BTC/ETH funding carry survives trading costs, collateral, and capital
+movement? What changes when it is combined with diversified ETFs? This project
+investigates those questions with positions and cash, rather than only combining
+return series. The original PCA/HMM work and unsuccessful stock pilot are retained
+as research history. **A future Sharpe of two has not been established.**
 
-Python 3.13 is the locked reference environment; the package supports 3.11+.
+![Historical direct-account replay, selected rolling risk and fixed-risk control](examples/historical-wealth.png)
+
+The chart includes the 2023 replay period. The selected account's 2024 onward daily
+evaluation has **1.95 daily / 1.89 monthly / 1.83 HAC-28 excess Sharpe**, 8.39% CAGR,
+and −2.28% maximum drawdown. The monthly estimate uses 32 complete calendar months,
+January 2024–August 2026; the daily sample ends in September 2026. This history has
+already been inspected. See [the evidence and its limits](docs/RESEARCH_NOTE.md).
+
+## Run an offline demonstration
+
 From the repository root in PowerShell:
 
 ```powershell
@@ -18,88 +28,114 @@ py -3.13 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --no-build-isolation --no-deps -e .
 .\.venv\Scripts\python.exe -m pip check
 .\.venv\Scripts\python.exe -m pytest -q
-.\.venv\Scripts\python.exe -m regime_lab project-demo --output outputs/demo_v1
+.\.venv\Scripts\python.exe scripts/reproduce.py demo --output outputs/demo_v1
 ```
 
-On Linux/macOS use python3.13 and .venv/bin/python. Open the resulting report.html.
-The demo exercises positions, funding, fees, transfers and a replayable paper
-journal. **Its observations are synthetic; its Sharpe is not trading evidence.**
-Use a new output directory each time. Windows/Linux CI generates the same demo.
-Remote CI requires pushing this repository. The original local .venv used system
-packages; the separate .venv-repro environment is isolated.
+On Linux/macOS use `python3.13` and `.venv/bin/python`. The package supports Python
+3.11+, while the pinned dependency set and CI use 3.13. Commands below assume the
+environment is activated; otherwise use its Python executable explicitly.
+
+Open `outputs/demo_v1/report.html`. The demo exercises positions, funding, fees,
+transfers, and a replayable paper journal. **Its observations are synthetic; its
+Sharpe is not trading evidence.** Each workflow needs a new output directory.
+Windows/Linux CI runs the tests, demo, gallery build, and wheel build without
+market-data downloads. Hosted checks run once the repository is pushed.
+
+## Reproduce the market study
+
+These commands use one consistent directory layout:
+
+```powershell
+python scripts/reproduce.py fetch --output outputs/download_v1 --data-root data --end-month 2026-09
+python scripts/reproduce.py market --output outputs/market_v1 --data-root data --end-month 2026-09
+```
+
+The first command downloads free ETF/cash histories and hourly crypto archives.
+It can take substantial time and disk space; availability and revised provider
+history can change results. It updates the chosen data cache. Use a separate
+`--data-root` to retain an earlier snapshot. Raw downloads stay outside Git and
+remain subject to provider terms.
+
+The second runs the exploratory family studies in `outputs/market_v1/study/`, then
+the direct account comparison in `outputs/market_v1/execution/`, and saves a
+selection audit beside them. It searches the documented candidate families;
+repeating an inspected period does not create a new holdout. Use an input cache
+ending at the chosen research month: the family studies consume the whole cache,
+while the direct replay also applies the requested date bound.
+
+Add `--dry-run` to inspect exact commands without writing or downloading. Each run
+stores a `workflow.json` receipt. Historical reports include source/input hashes,
+metrics, orders, holdings, decisions, event ledgers, PnL attribution, and independent
+reconciliation. Ending NAV marks open positions; it is not guaranteed liquidation
+proceeds. [Detailed reproduction and publication instructions](docs/REPRODUCIBILITY.md)
+explain the output tree and frozen paper setup.
 
 ## What is implemented
 
-- Coin wallets, whole inverse contracts, reciprocal PnL and positive/negative funding.
-- ETF holding drift, cash, costs and past-only allocation features.
-- Combined venue/broker cash, idle transfers and subsequent eligible fills.
-- Event-level PnL attribution, order blotters, daily holdings and reconciliation.
-- Reports that follow the saved validation selector and retain controls/failures.
+- Native coin wallets, whole inverse contracts, reciprocal PnL, and signed funding.
+- ETF holding drift, cash, costs, and past-only allocation features.
+- Venue/broker cash, idle transfers, and subsequent eligible fills.
+- Event-level PnL attribution and independently calculated trade reconciliation.
+- Reports following the saved validation selector, with controls and failures kept.
 - Source/library-pinned paper models, pre-outcome plans, public snapshots,
-  quote-age checks, linked journal records and account-state replay.
+  quote-age checks, linked journal records, and independent account-state replay.
 
 The direct variant implements passive carry plus a long-only ETF strategy. A new
 HMM/PCA overlay is a subsequent experiment; the original HMM research is preserved.
 
-## Market reproduction
-
-The original free-data download and study commands are in
-[LEGACY_RESEARCH.md](LEGACY_RESEARCH.md). With those input data and family outputs:
-
-```powershell
-python -m regime_lab alpha-report --output outputs/selected_report_v2
-python -m regime_lab selection-audit --output outputs/selection_audit_v1.json
-python -m regime_lab execution-run --output outputs/execution_v1
-```
-
-The new execution model trades underlying holdings, rather than historical return
-series. It compares the validation-selected allocator and a fixed training-risk
-control with the same accounting. Table scores use 2024 onward; the full replay
-starts in 2023. This history is already inspected and all results are exploratory.
-See --help for input paths and date bounds. Raw downloads stay outside Git.
-
-## Selection and evidence
-
-An earlier report highlighted fixed risk after inspecting evaluation results.
-Its 2.10 monthly annualized excess Sharpe was research-selected. The corrected
-original report follows rolling risk: approximately **1.81 monthly / 1.99 daily /
-1.75 HAC-28** for 2024-September 2026. These belong to the original return-sleeve
-model; the new account variant has separate performance and assumptions.
-
-Sharpe frequency, benchmark, costs and dependence matter. Strategy Sharpes subtract
-matched BIL returns. Pointwise intervals and allocator-only selection diagnostics
-do not undo earlier adaptive research or create an untouched holdout.
-
 ## Forward paper record
 
+After freezing and planning a model using the [paper runbook](docs/PAPER_RUNBOOK.md),
+capture and record in the same process:
+
 ```powershell
-python -m regime_lab paper-freeze --output paper/v1
-python -m regime_lab paper-refresh --model paper/v1 --output outputs/reference_v1
-python -m regime_lab paper-plan --model paper/v1 --inverse-results outputs/reference_v1/inverse --macro-results outputs/reference_v1/macro
-python -m regime_lab paper-capture --model paper/v1 --include-etfs --output data/captures/observation-001.json
-python -m regime_lab paper-step --model paper/v1 --snapshot data/captures/observation-001.json
+python scripts/paper_tick.py --model paper/v1 --captures data/captures
 python -m regime_lab paper-verify --model paper/v1
 ```
 
-Plans wait at least an hour before eligible trading; transfers take two business
-days. Capture/mark again later with a new filename. Stale ETF quotes prohibit fills.
-There are no live broker orders, credentials or background jobs. A short paper log
-is operational evidence, not a Sharpe estimate. Read the runbook before using it.
+Each successful tick retains the public snapshot and a separate checkpoint. It
+always includes ETF capture, serializes overlapping ticks, and stops on errors.
+Keep the checkpoint away from the journal and supply its head with
+`--expected-head` on the next tick. Plans wait at least an hour before eligible
+trading; transfers take two business days. Stale ETF quotes prohibit ETF fills.
 
-## Artifacts and explanation
+There are no live broker orders or installed background jobs. Planning and frozen
+reference refresh remain explicit operations. The curated checkpoint from
+20 October 2026 contains one real observation, zero fills, and no forward Sharpe.
+It is a dated snapshot, not a live status feed. Operations scripts sit outside the
+source-pinned strategy package, preserving the existing paper-v2 model identity.
 
-Each run contains a portable report, metrics, yearly scores, daily NAV, event
-ledgers, orders, decisions, daily holdings, PnL attribution and reconciliation.
-Ending NAV marks open positions; it is not guaranteed liquidation proceeds.
+## Read, demonstrate, or contribute
 
-- [Curated reports](examples/README.md)
-- [Research note](docs/RESEARCH_NOTE.md): economics, equations, selection and limitations.
-- [Protocol](docs/PROJECT_PROTOCOL.md): scope and acceptance criteria.
-- [Paper runbook](docs/PAPER_RUNBOOK.md): operation and checkpointing.
+- [Curated reports and artifacts](examples/README.md).
+- [Research note](docs/RESEARCH_NOTE.md): economics, equations, selection, and limitations.
+- [Protocol](docs/PROJECT_PROTOCOL.md) and [next experiments](docs/ROADMAP.md).
+- [Paper runbook](docs/PAPER_RUNBOOK.md): operation, failure recovery, and checkpoints.
 - [Interview guide](docs/INTERVIEW_GUIDE.md): demonstration and technical questions.
 - [Research log](RESEARCH_LOG.md) and [earlier research](LEGACY_RESEARCH.md).
+- [Contributing](CONTRIBUTING.md): reproducibility and research standards.
+
+Build a local static report gallery with
+`python scripts/build_site.py --output outputs/site_v1` and open its `index.html`.
+An optional, manually triggered GitHub Pages workflow publishes only curated
+artifacts. Setup is documented in the reproduction guide; no public site is
+claimed before deployment.
 
 Remaining limits include asynchronous marks, adjusted-price ETF proxies, indicative
 quotes without depth, exchange/custody/default risk, simplified settlement calendars
 and maintenance rules. Paper splits and dividend receivables are supported; verified
 payment-date settlement and broker reconciliation remain future work.
+
+## License and credit
+
+Copyright © 2026 **Panagiotis Baltas**. You may use, modify, and distribute the code,
+including commercially, under [MIT](LICENSE). Retain the copyright and license
+notice in copies or substantial portions. Dependencies and provider data retain
+their own terms.
+
+Please also credit this project in research, public projects, and presentations:
+
+> Baltas, Panagiotis (2026). *Regime Lab: Auditable carry execution and forward paper validation*. Version 0.2.1.
+
+[CITATION.cff](CITATION.cff) enables GitHub's citation feature. The citation request
+is a courtesy; MIT's binding attribution requirement is retaining its notices.

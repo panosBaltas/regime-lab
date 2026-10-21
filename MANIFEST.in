@@ -1,0 +1,7 @@
+include LICENSE CITATION.cff requirements-lock.txt
+include LEGACY_RESEARCH.md RESEARCH_LOG.md CONTRIBUTING.md
+recursive-include configs *.toml
+recursive-include docs *.md
+recursive-include examples *.md *.html *.json *.csv *.png
+recursive-include scripts *.py *.html
+recursive-include tests *.py

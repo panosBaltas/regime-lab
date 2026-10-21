@@ -8,6 +8,9 @@ be presented as market performance.
 and `historical-pnl-attribution.csv` summarize the direct-account replay from the
 existing free-data cache. These small artifacts let a reviewer inspect the project
 without downloading raw data. Large event ledgers remain in ignored local outputs.
+`historical-wealth.png` is the unchanged equity figure from that account replay.
+The static gallery builder reads these curated artifacts without rerunning research:
+`python scripts/build_site.py --output outputs/site_v1`.
 
 `selected-reference-model.json` records the corrected original return-sleeve
 selection. `selection-audit.json` contains exploratory allocator-only statistical
@@ -15,8 +18,8 @@ diagnostics. These artifacts concern different studies; do not merge headlines o
 treat selection diagnostics as independent forward validation.
 
 `paper-start-checkpoint.json` records the active prospective model/journal hashes.
-There is one real public-market observation and no fills: the initial plan is
-still waiting for its eligibility time. An initial capture timed out and another
+At the 20 October 2026 checkpoint there was one real public-market observation
+and no fills; no eligible fill had yet been observed. An initial capture timed out and another
 was rejected as stale before the successful capture/record cycle. No forward
 Sharpe is inferred. The checkpoint is a local version-control anchor, not an
 independent timestamp proof.
